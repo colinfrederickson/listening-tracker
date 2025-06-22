@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Listening Habits Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #1DB954, #1ed760);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .spotify-btn {
+            background: #1DB954;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spotify-btn:hover {
+            background: #1ed760;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(29, 185, 84, 0.3);
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tab {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1DB954;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .top-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .top-list {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .top-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .top-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .item-info h4 {
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+
+        .item-info p {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.1rem;
+        }
+
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .time-filter {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .time-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .time-btn.active {
+            background: #1DB954;
+            color: white;
+            border-color: #1DB954;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tabs {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 My Listening Habits</h1>
+            <p>Track your music and podcast consumption across platforms</p>
+        </div>
+
+        <div id="auth-section" class="auth-section">
+            <h2>Connect Your Spotify Account</h2>
+            <p style="margin: 20px 0;">Get insights into your music and podcast listening habits</p>
+            <button id="login-btn" class="spotify-btn">
+                <span>🎵</span>
+                Connect to Spotify
+            </button>
+        </div>
+
+        <div id="main-content" style="display: none;">
+            <div class="tabs">
+                <button class="tab active" data-tab="overview">📊 Overview</button>
+                <button class="tab" data-tab="music">🎵 Music</button>
+                <button class="tab" data-tab="podcasts">🎙️ Podcasts</button>
+                <button class="tab" data-tab="trends">📈 Trends</button>
+            </div>
+
+            <div class="time-filter">
+                <button class="time-btn active" data-period="short_term">Last 4 Weeks</button>
+                <button class="time-btn" data-period="medium_term">Last 6 Months</button>
+                <button class="time-btn" data-period="long_term">All Time</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="overview" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-tracks">-</div>
+                        <div class="stat-label">Total Tracks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-artists">-</div>
+                        <div class="stat-label">Unique Artists</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-podcasts">-</div>
+                        <div class="stat-label">Podcast Shows</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="listening-time">-</div>
+                        <div class="stat-label">Hours Listened</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">Music vs Podcasts</h3>
+                    <canvas id="content-type-chart"></canvas>
+                </div>
+
+                <div class="top-items">
+                    <div class="top-list">
+                        <h3>🔥 Current Favorites</h3>
+                        <div id="current-favorites"></div>
+                    </div>
+                    <div class="top-list">
+                        <h3>🎙️ Recent Podcasts</h3>
+                        <div id="recent-podcasts"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Music Tab -->
+            <div id="music" class="content-section">
+                <div class="chart-container">
+                    <h3 class="chart-title">Top Genres</h3>
+                    <canvas id="genre-chart"></canvas>
+                </div>
+
+                <div class="top-items">
+                    <div class="top-list">
+                        <h3>🎵 Top Tracks</h3>
+                        <div id="top-tracks"></div>
+                    </div>
+                    <div class="top-list">
+                        <h3>👨‍🎤 Top Artists</h3>
+                        <div id="top-artists"></div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">Audio Features Analysis</h3>
+                    <canvas id="audio-features-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Podcasts Tab -->
+            <div id="podcasts" class="content-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="podcast-shows">-</div>
+                        <div class="stat-label">Shows Followed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="episodes-played">-</div>
+                        <div class="stat-label">Episodes Played</div>
+                    </div>
+                </div>
+
+                <div class="top-items">
+                    <div class="top-list">
+                        <h3>🎙️ Top Podcast Shows</h3>
+                        <div id="top-podcast-shows"></div>
+                    </div>
+                    <div class="top-list">
+                        <h3>📻 Recent Episodes</h3>
+                        <div id="recent-episodes"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trends Tab -->
+            <div id="trends" class="content-section">
+                <div class="chart-container">
+                    <h3 class="chart-title">Listening Activity Over Time</h3>
+                    <canvas id="activity-chart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">Discovery Rate</h3>
+                    <canvas id="discovery-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <p>Loading your listening data... 🎵</p>
+        </div>
+    </div>
+
+    <script>
+        // Spotify API Configuration
+        const CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID'; // You'll need to replace this
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        const SCOPES = 'user-read-private user-read-email user-top-read user-read-recently-played user-read-playback-state';
+
+        let accessToken = null;
+        let currentPeriod = 'short_term';
+        let userData = {};
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if we have an access token in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            
+            if (code) {
+                // Exchange code for access token (this would need a backend in real implementation)
+                // For demo purposes, we'll simulate having a token
+                showDemo();
+            } else {
+                // Show login
+                document.getElementById('auth-section').style.display = 'block';
+            }
+
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Login button
+            document.getElementById('login-btn').addEventListener('click', function() {
+                // In a real app, this would redirect to Spotify OAuth
+                // For demo, we'll show sample data
+                showDemo();
+            });
+
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
+
+            // Time period filtering
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentPeriod = this.dataset.period;
+                    if (accessToken) {
+                        loadData();
+                    }
+                });
+            });
+        }
+
+        function showDemo() {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            loadDemoData();
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // Update content sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function loadDemoData() {
+            // Demo data - in real app this would come from Spotify API
+            const demoData = {
+                stats: {
+                    totalTracks: 1247,
+                    totalArtists: 342,
+                    totalPodcasts: 28,
+                    listeningTime: 156
+                },
+                topTracks: [
+                    { name: "Bohemian Rhapsody", artist: "Queen", image: "https://via.placeholder.com/50", plays: 47 },
+                    { name: "Stairway to Heaven", artist: "Led Zeppelin", image: "https://via.placeholder.com/50", plays: 39 },
+                    { name: "Hotel California", artist: "Eagles", image: "https://via.placeholder.com/50", plays: 35 },
+                    { name: "Imagine", artist: "John Lennon", image: "https://via.placeholder.com/50", plays: 32 },
+                    { name: "Billie Jean", artist: "Michael Jackson", image: "https://via.placeholder.com/50", plays: 29 }
+                ],
+                topArtists: [
+                    { name: "The Beatles", image: "https://via.placeholder.com/50", plays: 156 },
+                    { name: "Pink Floyd", image: "https://via.placeholder.com/50", plays: 134 },
+                    { name: "Queen", image: "https://via.placeholder.com/50", plays: 112 },
+                    { name: "Led Zeppelin", image: "https://via.placeholder.com/50", plays: 98 },
+                    { name: "David Bowie", image: "https://via.placeholder.com/50", plays: 87 }
+                ],
+                topPodcasts: [
+                    { name: "The Joe Rogan Experience", episodes: 23, image: "https://via.placeholder.com/50" },
+                    { name: "Serial", episodes: 18, image: "https://via.placeholder.com/50" },
+                    { name: "This American Life", episodes: 15, image: "https://via.placeholder.com/50" },
+                    { name: "Hardcore History", episodes: 12, image: "https://via.placeholder.com/50" },
+                    { name: "Radiolab", episodes: 11, image: "https://via.placeholder.com/50" }
+                ],
+                genres: {
+                    "Rock": 35,
+                    "Pop": 28,
+                    "Jazz": 15,
+                    "Classical": 12,
+                    "Hip-Hop": 10
+                },
+                audioFeatures: {
+                    danceability: 0.65,
+                    energy: 0.72,
+                    valence: 0.58,
+                    acousticness: 0.31,
+                    instrumentalness: 0.18
+                }
+            };
+
+            displayData(demoData);
+        }
+
+        function displayData(data) {
+            // Update stats
+            document.getElementById('total-tracks').textContent = data.stats.totalTracks.toLocaleString();
+            document.getElementById('total-artists').textContent = data.stats.totalArtists.toLocaleString();
+            document.getElementById('total-podcasts').textContent = data.stats.totalPodcasts.toLocaleString();
+            document.getElementById('listening-time').textContent = data.stats.listeningTime.toLocaleString();
+
+            // Update podcast-specific stats
+            document.getElementById('podcast-shows').textContent = data.stats.totalPodcasts.toLocaleString();
+            document.getElementById('episodes-played').textContent = '247';
+
+            // Display top tracks
+            displayTopItems('top-tracks', data.topTracks, 'track');
+            displayTopItems('current-favorites', data.topTracks.slice(0, 3), 'track');
+            
+            // Display top artists
+            displayTopItems('top-artists', data.topArtists, 'artist');
+            
+            // Display podcasts
+            displayTopItems('top-podcast-shows', data.topPodcasts, 'podcast');
+            displayTopItems('recent-podcasts', data.topPodcasts.slice(0, 3), 'podcast');
+            displayTopItems('recent-episodes', [
+                { name: "Episode 1847: The Future of AI", artist: "The Joe Rogan Experience", image: "https://via.placeholder.com/50" },
+                { name: "S04E12: The Alibi", artist: "Serial", image: "https://via.placeholder.com/50" },
+                { name: "Act Three: What Lies Beneath", artist: "This American Life", image: "https://via.placeholder.com/50" }
+            ], 'episode');
+
+            // Create charts
+            createGenreChart(data.genres);
+            createContentTypeChart();
+            createAudioFeaturesChart(data.audioFeatures);
+            createActivityChart();
+            createDiscoveryChart();
+        }
+
+        function displayTopItems(containerId, items, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'top-item';
+                
+                let subtitle = '';
+                if (type === 'track') subtitle = item.artist;
+                else if (type === 'artist') subtitle = `${item.plays} plays`;
+                else if (type === 'podcast') subtitle = `${item.episodes} episodes`;
+                else if (type === 'episode') subtitle = item.artist;
+
+                itemDiv.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="item-image">
+                    <div class="item-info">
+                        <h4>${item.name}</h4>
+                        <p>${subtitle}</p>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function createGenreChart(genres) {
+            const ctx = document.getElementById('genre-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(genres),
+                    datasets: [{
+                        data: Object.values(genres),
+                        backgroundColor: [
+                            '#1DB954',
+                            '#1ed760',
+                            '#18a446',
+                            '#159938',
+                            '#12822a'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createContentTypeChart() {
+            const ctx = document.getElementById('content-type-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Music', 'Podcasts'],
+                    datasets: [{
+                        data: [75, 25],
+                        backgroundColor: ['#1DB954', '#ff6b6b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createAudioFeaturesChart(features) {
+            const ctx = document.getElementById('audio-features-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Danceability', 'Energy', 'Valence', 'Acousticness', 'Instrumentalness'],
+                    datasets: [{
+                        label: 'Your Music Profile',
+                        data: Object.values(features),
+                        borderColor: '#1DB954',
+                        backgroundColor: 'rgba(29, 185, 84, 0.2)',
+                        pointBackgroundColor: '#1DB954'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 1,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            angleLines: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            pointLabels: {
+                                color: '#fff'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createActivityChart() {
+            const ctx = document.getElementById('activity-chart').getContext('2d');
+            const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const musicData = [45, 52, 38, 67, 73, 89, 95];
+            const podcastData = [15, 18, 22, 28, 25, 35, 42];
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Music (minutes)',
+                            data: musicData,
+                            borderColor: '#1DB954',
+                            backgroundColor: 'rgba(29, 185, 84, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Podcasts (minutes)',
+                            data: podcastData,
+                            borderColor: '#ff6b6b',
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createDiscoveryChart() {
+            const ctx = document.getElementById('discovery-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['New Artists', 'New Songs', 'New Podcasts'],
+                    datasets: [{
+                        label: 'This Month',
+                        data: [12, 47, 3],
+                        backgroundColor: '#1DB954'
+                    }, {
+                        label: 'Last Month',
+                        data: [8, 32, 2],
+                        backgroundColor: 'rgba(29, 185, 84, 0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Note: To make this work with real Spotify data, you'll need to:
+        // 1. Register your app at https://developer.spotify.com/dashboard
+        // 2. Replace YOUR_SPOTIFY_CLIENT_ID with your actual client ID
+        // 3. Set up proper OAuth flow (requires backend for token exchange)
+        // 4. Replace demo data with actual API calls to Spotify Web API
+    </script>
+</body>
+</html>
